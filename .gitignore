@@ -1,3 +1,7 @@
 raw-data/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz
 raw-data/TcgaTargetGTEX_phenotype.txt.gz
 raw-data/gene_attribute_matrix.txt.gz
+processed-data/*
+saved_model.pb
+variables/*
+assets/*
