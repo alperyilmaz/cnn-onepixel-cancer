@@ -8,3 +8,5 @@ assets/*
 __pycache__
 results/attack_results/
 *.pkl
+results/attack_images/*png
+results/attack_complete
