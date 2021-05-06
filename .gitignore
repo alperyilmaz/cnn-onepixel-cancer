@@ -6,3 +6,5 @@ saved_model.pb
 variables/*
 assets/*
 __pycache__
+results/attack_results/
+*.pkl
