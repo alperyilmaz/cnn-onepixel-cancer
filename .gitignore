@@ -5,3 +5,4 @@ processed-data/*
 saved_model.pb
 variables/*
 assets/*
+__pycache__
