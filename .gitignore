@@ -10,3 +10,4 @@ results/attack_results/
 *.pkl
 results/attack_images/*png
 results/attack_complete
+results/attack_summary*
