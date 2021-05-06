@@ -1,0 +1,9 @@
+wget https://toil.xenahubs.net/download/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz
+wget https://toil.xenahubs.net/download/TcgaTargetGTEX_phenotype.txt.gz
+
+# genes that have diff exp in TCGA
+# data is retrieved from LINCS Harmonizome site: https://maayanlab.cloud/Harmonizome/dataset/TCGA+Signatures+of+Differentially+Expressed+Genes+for+Tumors
+wget https://maayanlab.cloud/static/hdfs/harmonizome/data/tcga/gene_attribute_matrix.txt.gz
+
+# biomart_gene_conv.tsv
+# url for biomart: http://grch37.ensembl.org/biomart/martview/2ca6665a10786b204a8901f46279d411?VIRTUALSCHEMANAME=default&ATTRIBUTES=hsapiens_gene_ensembl.default.feature_page.ensembl_gene_id|hsapiens_gene_ensembl.default.feature_page.external_gene_name|hsapiens_gene_ensembl.default.feature_page.entrezgene_id&FILTERS=&VISIBLEPANEL=resultspanel
