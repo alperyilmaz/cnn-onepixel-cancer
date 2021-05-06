@@ -10,6 +10,21 @@ from datetime import datetime
 from differential_evolution import differential_evolution
 import helper
 
+# trying to prevent cuDNN errors. taken from
+# https://forums.developer.nvidia.com/t/could-not-create-cudnn-handle-cudnn-status-alloc-failed/108261/2
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
+
+
 ### attack functions ###
 
 def perturb_image(xs, img):
@@ -163,7 +178,7 @@ def attack_all(models, samples=500, pixels=(1), targeted=False,
 RESULT="results/"
 MODEL="model/"
 
-seed_no=600
+seed_no=700
 np.random.seed(seed_no)
 
 class_names = ["Normal","Tumor"]
@@ -186,7 +201,8 @@ network_stats.to_csv(RESULT + "model_stats.csv")
 print("[Starting the attack..]")
 now = datetime.now()
 dt_string = now.strftime("%Y%m%d-%H%M%S")
-untargeted = attack_all(models, samples=5, targeted=False, pixels=[1])
+
+untargeted = attack_all(models, samples=100, targeted=False, pixels=[1])
 
 columns = ['model', 'pixels', 'image', 'true', 'predicted', 'success', 'cdiff', 'prior_probs', 'predicted_probs', 'perturbation']
 

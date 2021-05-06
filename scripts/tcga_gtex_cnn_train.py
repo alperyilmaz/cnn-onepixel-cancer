@@ -8,7 +8,7 @@ from keras import backend as K
 import tensorflow as tf
 import keras
 from PIL import Image
-
+from datetime import datetime
 from keras import optimizers
 from keras.datasets import cifar10
 from keras.models import Sequential, load_model
@@ -17,9 +17,26 @@ from keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
 from keras.regularizers import l2
 
+# trying to prevent cuDNN errors. taken from
+# https://forums.developer.nvidia.com/t/could-not-create-cudnn-handle-cudnn-status-alloc-failed/108261/2
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
+
 RESULT="results/"
 MODELFOLDER="model/"
 FIGURES="figures/"
+
+now = datetime.now()
+dt_string = now.strftime("%Y%m%d-%H%M%S")
 
 data = np.load(RESULT + "tcga_gtex_genes_data.npz")
 x_train = data["x_train"]
@@ -34,7 +51,7 @@ print("x_test shape:  ",    x_test.shape)
 print("y_train shape: ",   y_train.shape)
 print("y_test shape:  ",    y_test.shape)
 
-model = Sequential()
+model = Sequential(name="Sequential_" + dt_string)
 
 model.add(Conv2D(96, (3, 3), activation='relu', padding = 'same', input_shape=(32, 32, 3)))    
 model.add(Dropout(0.2))
@@ -76,7 +93,7 @@ checkpoint = ModelCheckpoint('.',
                             mode='auto')
 
 history = model.fit(x_train, y_train,callbacks=checkpoint,
-                    epochs=1,
+                    epochs=40,
                     verbose=1,
                     validation_data = (x_test, y_test))
 
