@@ -167,7 +167,7 @@ def extract_attack(image_id, x, y, r, g, b):
 
 
 f=open(RESULT + "attack_summary","r")
-f2=open(RESULT + "attack_summary_extracted","w")
+f2=open(RESULT + "attack_summary_annotated","w")
 
 for line in f:
     items=line.split("\t")
