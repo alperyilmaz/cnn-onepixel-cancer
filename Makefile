@@ -6,10 +6,11 @@ RESULT=results
 SCRIPT=scripts
 MODEL=model
 
-all: prepare_data train
+all: prepare_data train attack
 prepare_data: $(RESULT)/selected_genes_sample_transposed.tsv  $(PROCESSED)/sample_labels_matching  $(PROCESSED)/train_sample_labels.tsv $(RESULT)/tcga_gtex_genes_data.npz
 train: $(MODEL)/tcgamodel.h5
-.PHONY: prepare_data train all
+attack: $(RESULT)/attack_summary_annotated
+.PHONY: prepare_data train attack all
 
 $(PROCESSED)/genes-deseq2: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz
 	@echo "[ $$(date +'%Y-%m-%d %H:%M:%S') ] Get genes that have deseq2 expression.."
@@ -68,3 +69,17 @@ $(RESULT)/tcga_gtex_genes_data.npz: $(SCRIPT)/sample_convert.py $(PROCESSED)/tra
 $(MODEL)/tcgamodel.h5: $(SCRIPT)/tcga_gtex_cnn_train.py $(RESULT)/tcga_gtex_genes_data.npz
 	@echo "[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting the training process.."
 	@docker run -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack python $<
+
+$(RESULT)/attack_complete: $(SCRIPT)/attack_tcga.py 
+	@echo "[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting one pixel attack.."
+	@docker run -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack python $<
+	@touch $@
+
+$(RESULT)/attack_summary: $(RESULT)/attack_complete 
+	@echo "[ $$(date +'%Y-%m-%d %H:%M:%S') ] Summarizing attack results.."
+	@awk -F"," '$$7=="True" {print $$4,$$2,$$5,$$6,$$9, $$10,$$11}' $(RESULT)/attack_results/attack_results* | tr -d "[]" | tr -s " " "\t"  | grep -v '"' | awk '{printf"%d %s %d %d %1.3f %1.3f %1.3f %1.3f %d %d %d %d %d\n", $$1, $$2, $$3, $$4, $$5, $$6, $$7, $$8, $$9, $$10, $$11, $$12, $$13}' | tr " " "\t" | sort -k6 -nr > $@
+
+$(RESULT)/attack_summary_annotated: $(SCRIPT)/extract_attack.py $(MODEL)/tcgamodel.h5 $(RESULT)/tcga_gtex_genes_data.npz
+	@echo "[ $$(date +'%Y-%m-%d %H:%M:%S') ] Annotating attack results.."
+	@docker run -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack python $<
+	@echo "[ $$(date +'%Y-%m-%d %H:%M:%S') ] All steps are completed.."
