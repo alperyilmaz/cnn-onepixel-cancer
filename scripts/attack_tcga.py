@@ -9,6 +9,7 @@ import keras
 from datetime import datetime
 from differential_evolution import differential_evolution
 import helper
+import random
 
 # trying to prevent cuDNN errors. taken from
 # https://forums.developer.nvidia.com/t/could-not-create-cudnn-handle-cudnn-status-alloc-failed/108261/2
@@ -178,7 +179,7 @@ def attack_all(models, samples=500, pixels=(1), targeted=False,
 RESULT="results/"
 MODEL="model/"
 
-seed_no=700
+seed_no=random.randint(1,10000)
 np.random.seed(seed_no)
 
 class_names = ["Normal","Tumor"]
@@ -202,7 +203,7 @@ print("[Starting the attack..]")
 now = datetime.now()
 dt_string = now.strftime("%Y%m%d-%H%M%S")
 
-untargeted = attack_all(models, samples=100, targeted=False, pixels=[1])
+untargeted = attack_all(models, samples=800, targeted=False, pixels=[1])
 
 columns = ['model', 'pixels', 'image', 'true', 'predicted', 'success', 'cdiff', 'prior_probs', 'predicted_probs', 'perturbation']
 
