@@ -19,7 +19,7 @@ endif
 all: prepare_data train attack
 prepare_data: $(RESULT)/selected_genes_sample_transposed.tsv  $(PROCESSED)/sample_labels_matching  $(PROCESSED)/train_sample_labels.tsv $(RESULT)/tcga_gtex_genes_data.npz
 train: $(MODEL)/tcgamodel.h5
-attack: $(RESULT)/attack_summary_annotated
+attack:  $(RESULT)/candidate_genes
 .PHONY: prepare_data train attack all
 
 $(PROCESSED)/genes-deseq2: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz
@@ -92,4 +92,13 @@ $(RESULT)/attack_summary: $(RESULT)/attack_complete
 $(RESULT)/attack_summary_annotated: $(SCRIPT)/extract_attack.py $(RESULT)/attack_summary $(MODEL)/tcgamodel.h5 $(RESULT)/tcga_gtex_genes_data.npz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Annotating attack results..${RESET}"
 	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
+
+$(PROCESSED)/min_max_gene_exp_per_domain: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz 
+	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Calculating min and max expression per gene..${RESET}"
+	@gunzip -c $<  | _filtergenes |  _pivotlonger | _filtersamples | awk -f scripts/print_min_max.awk > $@
+
+$(RESULT)/candidate_genes: $(PROCESSED)/min_max_gene_exp_per_domain $(RESULT)/attack_summary_annotated
+	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Checking if successfully attacked gene is within expression limits..${RESET}"
+	@awk -f $(SCRIPT)/check_gene_expression_boundary.awk $< $(filter-out $<,$^) > $(PROCESSED)/attack_summary_annotated_boundary
+	@awk '$$5 != $$6 && $$7 ~/Within/' $(PROCESSED)/attack_summary_annotated_boundary > $@
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] All steps are completed..${RESET}"
