@@ -18,7 +18,7 @@ endif
 
 all: prepare_data train attack
 prepare_data: $(RESULT)/selected_genes_sample_transposed.tsv  $(PROCESSED)/sample_labels_matching  $(PROCESSED)/train_sample_labels.tsv $(RESULT)/tcga_gtex_genes_data.npz
-train: $(MODEL)/tcgamodel.h5
+train: $(MODEL)/tcgamodel.h5 $(MODEL)/model_evaluation_report.txt
 attack:  $(RESULT)/candidate_genes
 .PHONY: prepare_data train attack all
 
@@ -80,6 +80,11 @@ $(MODEL)/tcgamodel.h5: $(SCRIPT)/tcga_gtex_cnn_train.py $(RESULT)/tcga_gtex_gene
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting the training process..${RESET}"
 	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
 
+$(MODEL)/model_evaluation_report.txt: $(SCRIPT)/evaluate_model.py $(MODEL)/tcgamodel.h5 $(RESULT)/tcga_gtex_genes_data.npz
+	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Preparing ROC curve and model evaluation report..${RESET}"
+	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
+	@touch $@
+
 $(RESULT)/attack_complete: $(SCRIPT)/attack_tcga.py 
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting one pixel attack..${RESET}"
 	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
@@ -87,7 +92,7 @@ $(RESULT)/attack_complete: $(SCRIPT)/attack_tcga.py
 
 $(RESULT)/attack_summary: $(RESULT)/attack_complete 
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Summarizing attack results..${RESET}"
-	@awk -F"," '$$7=="True" {print $$4,$$2,$$5,$$6,$$9, $$10,$$11}' $(RESULT)/attack_results/attack_results* | tr -d "[]" | tr -s " " "\t"  | grep -v '"' | awk '{printf"%d %s %d %d %1.3f %1.3f %1.3f %1.3f %d %d %d %d %d\n", $$1, $$2, $$3, $$4, $$5, $$6, $$7, $$8, $$9, $$10, $$11, $$12, $$13}' | tr " " "\t" | sort -k6 -nr > $@
+	@awk -F"," '$$7=="True" {print $$4,$$2,$$5,$$6,$$9, $$10,$$11}' $(RESULT)/attack_results/attack_results* | tr -d "[]" | tr -s " " "\t"  | grep -v '"' | awk '{printf"%d %s %d %d %1.3f %1.3f %1.3f %1.3f %d %d %d %d %d\n", $$1, $$2, $$3, $$4, $$5, $$6, $$7, $$8, $$9, $$10, $$11, $$12, $$13}' | tr " " "\t" | sort -k6 -nr | uniq > $@
 
 $(RESULT)/attack_summary_annotated: $(SCRIPT)/extract_attack.py $(RESULT)/attack_summary $(MODEL)/tcgamodel.h5 $(RESULT)/tcga_gtex_genes_data.npz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Annotating attack results..${RESET}"
