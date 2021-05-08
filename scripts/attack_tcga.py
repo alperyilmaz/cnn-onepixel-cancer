@@ -197,7 +197,7 @@ network_stats, correct_imgs = helper.evaluate_models(models, x_test, y_test)
 correct_imgs = pd.DataFrame(correct_imgs, columns=['name', 'img', 'label', 'confidence', 'pred'])
 network_stats = pd.DataFrame(network_stats, columns=['name', 'accuracy', 'param_count'])
 
-network_stats.to_csv(RESULT + "model_stats.csv")
+network_stats.to_csv(MODEL + "model_stats.csv")
 
 print("[Starting the attack..]")
 now = datetime.now()
