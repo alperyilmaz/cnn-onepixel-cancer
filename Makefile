@@ -20,7 +20,7 @@ all: prepare_data train attack
 prepare_data: $(RESULT)/selected_genes_sample_transposed.tsv  $(PROCESSED)/sample_labels_matching  $(PROCESSED)/train_sample_labels.tsv $(RESULT)/tcga_gtex_genes_data.npz
 train: $(MODEL)/tcgamodel.h5 $(MODEL)/model_evaluation_report.txt
 attack:  $(RESULT)/candidate_genes
-.PHONY: prepare_data train attack all
+.PHONY: prepare_data train attack all archive clean_processed clean_all clean_results
 
 $(PROCESSED)/genes-deseq2: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Get genes that have deseq2 expression..${RESET}"
@@ -107,3 +107,19 @@ $(RESULT)/candidate_genes: $(PROCESSED)/min_max_gene_exp_per_domain $(RESULT)/at
 	@awk -f $(SCRIPT)/check_gene_expression_boundary.awk $< $(filter-out $<,$^) > $(PROCESSED)/attack_summary_annotated_boundary
 	@awk '$$5 != $$6 && $$7 ~/Within/' $(PROCESSED)/attack_summary_annotated_boundary | sort -u > $@
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] All steps are completed..${RESET}"
+
+archive:
+	@echo "Archiving results.."
+	@echo "Running make will start new attack.."
+	@tar czvf archive/arcive_name.tar.gz figures/* misc/* model/* results/attack_images/* results/attack_results/* results/attack_summary* results/candidate_genes results/tcga_gtex_genes_data.npz
+	@rm results/attack_complete results/attack_images/* results/attack_results/* results/attack_summary* results/candidate_genes
+  
+clean_processed:
+	@echo "Cleaning processed data.." 
+	@echo rm -r assets processed_data/*  variables/ saved_model.pb
+
+clean_results: 
+	@echo rm
+
+clean_all:
+	@echo rm 

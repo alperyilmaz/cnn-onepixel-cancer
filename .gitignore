@@ -11,3 +11,5 @@ results/attack_results/
 results/attack_images/*png
 results/attack_complete
 results/attack_summary*
+archive/
+results/candidate_genes
