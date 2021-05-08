@@ -38,6 +38,7 @@ FIGURES="figures/"
 now = datetime.now()
 dt_string = now.strftime("%Y%m%d-%H%M%S")
 
+class_names = ["Normal","Tumor"]
 data = np.load(RESULT + "tcga_gtex_genes_data.npz")
 x_train = data["x_train"]
 x_test = data["x_test"]
@@ -157,3 +158,36 @@ plt.gca().xaxis.set_major_locator(plt.NullLocator())
 plt.gca().yaxis.set_major_locator(plt.NullLocator())
 #fig.suptitle('Normal Samples', fontsize=16)
 plt.savefig(FIGURES + "tumor.png", bbox_inches = 'tight', pad_inches = 0, dpi=300)
+plt.close()
+
+## print more model related information
+from sklearn.metrics import roc_curve, auc, roc_auc_score, classification_report, confusion_matrix
+
+y_train = data["y_train"].reshape(-1,1)
+y_test = data["y_test"].reshape(-1,1)
+class_names = ["Normal","Tumor"]
+
+tcganet = keras.models.load_model(MODELFOLDER + "tcgamodel.h5")
+predictions = tcganet.predict(x_test)
+true_pred_tuples = [(label,np.argmax(pred)) for (label, pred) in zip(y_test[:, 0], predictions)]
+predictions_cold = [ np.argmax(i) for i in predictions ]
+
+f=open(MODELFOLDER + "model_evaluation_report.txt",'w')
+print('Confusion Matrix', file=f)
+print(confusion_matrix(y_test[:, 0], predictions_cold), file=f)
+print(" ",file=f)
+print('Classification Report',file=f)
+print(classification_report(y_test[:, 0], predictions_cold, target_names=class_names), file=f)
+f.close()
+
+fpr_keras, tpr_keras, thresholds_keras = roc_curve(y_test[:, 0], predictions_cold)
+auc_keras = auc(fpr_keras, tpr_keras)
+
+plt.figure(1)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.plot(fpr_keras, tpr_keras, label='area = {:.3f}'.format(auc_keras))
+plt.xlabel('False positive rate')
+plt.ylabel('True positive rate')
+plt.title('ROC curve')
+plt.legend(loc='best')
+plt.savefig(FIGURES + "ROC_AUC.svg", dpi=300)

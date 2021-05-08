@@ -100,5 +100,5 @@ $(PROCESSED)/min_max_gene_exp_per_domain: $(RAW)/TCGA-GTEx-TARGET-gene-exp-count
 $(RESULT)/candidate_genes: $(PROCESSED)/min_max_gene_exp_per_domain $(RESULT)/attack_summary_annotated
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Checking if successfully attacked gene is within expression limits..${RESET}"
 	@awk -f $(SCRIPT)/check_gene_expression_boundary.awk $< $(filter-out $<,$^) > $(PROCESSED)/attack_summary_annotated_boundary
-	@awk '$$5 != $$6 && $$7 ~/Within/' $(PROCESSED)/attack_summary_annotated_boundary > $@
+	@awk '$$5 != $$6 && $$7 ~/Within/' $(PROCESSED)/attack_summary_annotated_boundary | sort -u > $@
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] All steps are completed..${RESET}"
