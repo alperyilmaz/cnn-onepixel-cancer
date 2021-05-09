@@ -111,7 +111,7 @@ $(RESULT)/candidate_genes: $(PROCESSED)/min_max_gene_exp_per_domain $(RESULT)/at
 archive:
 	@echo "Archiving results.."
 	@echo "Running make will start new attack.."
-	@tar czvf archive/arcive_name.tar.gz figures/* misc/* model/* results/attack_images/* results/attack_results/* results/attack_summary* results/candidate_genes results/tcga_gtex_genes_data.npz
+	@tar czvf archive/archive_"$$(date +'%Y%m%d')".tar.gz figures/* misc/* model/* results/attack_images/* results/attack_results/* results/attack_summary* results/candidate_genes results/tcga_gtex_genes_data.npz
 	@rm results/attack_complete results/attack_images/* results/attack_results/* results/attack_summary* results/candidate_genes
   
 clean_processed:
