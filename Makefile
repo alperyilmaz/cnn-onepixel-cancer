@@ -87,6 +87,7 @@ $(MODEL)/model_evaluation_report.txt: $(SCRIPT)/evaluate_model.py $(MODEL)/tcgam
 
 $(RESULT)/attack_complete: $(SCRIPT)/attack_tcga.py 
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting one pixel attack..${RESET}"
+	@[ -d $(RESULT)/attack_results ] || mkdir -p $(RESULT)/attack_results
 	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
 	@touch $@
 
