@@ -8,3 +8,10 @@ These steps are needed to run only once.
 Before each run of `make` you need to source the shell functions defined in `scripts/functions.sh` by running the command `source scripts/functions.sh`
 
 After that, you are ready to go. Just run `make` 
+
+# Requirements
+
+* gawk
+* R (with `tidyverse` installed)
+* docker (or python with packages listed under `misc/requirements.txt`)
+
