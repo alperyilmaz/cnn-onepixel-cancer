@@ -120,7 +120,7 @@ check:
 	@gawk --version >/dev/null 2>&1 || (echo "ERROR: gawk is required (standard awk is not enough)."; exit 1)
 	@Rscript -e "library(tidyverse)" >/dev/null 2>&1 || (echo "ERROR: R with tidyverse required."; exit 1)
 	@docker --version >/dev/null 2>&1 || (echo -e "ERROR: docker is required for running Tensorflow scripts.\n       If you prefer not to use docker, please install Python packages listed under misc/requirements.txt along with tensorflow"; exit 1)
-
+	@echo "All dependencies are met. You can run 'make'.."
 clean_processed:
 	@echo "Cleaning processed data.."
 	@echo rm -r assets processed_data/*  variables/ saved_model.pb

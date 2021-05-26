@@ -11,6 +11,8 @@ After that, you are ready to go. Just run `make`
 
 # Requirements
 
+Please run `make check` to check is required programs are available.
+
 * gawk
 * R (with `tidyverse` installed)
 * docker (or python with packages listed under `misc/requirements.txt`)
