@@ -20,7 +20,7 @@ all: prepare_data train attack
 prepare_data: $(RESULT)/selected_genes_sample_transposed.tsv  $(PROCESSED)/sample_labels_matching  $(PROCESSED)/train_sample_labels.tsv $(RESULT)/tcga_gtex_genes_data.npz
 train: $(MODEL)/tcgamodel.h5 $(MODEL)/model_evaluation_report.txt
 attack:  $(RESULT)/candidate_genes
-.PHONY: prepare_data train attack all archive clean_processed clean_all clean_results
+.PHONY: prepare_data train attack all archive clean_processed clean_all clean_results check
 
 $(PROCESSED)/genes-deseq2: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Get genes that have deseq2 expression..${RESET}"
@@ -58,7 +58,7 @@ $(PROCESSED)/sample_labels_matching: $(RESULT)/selected_genes_sample_transposed.
 	@cut -f1 $< | sed 1d | awk 'FNR==NR {matching[$$1]++; next} ($$1 in matching){printf"%s\t%s\n",$$1,$$2}' - $(PROCESSED)/sample_labels > $@
 
 $(PROCESSED)/train_sample_labels.tsv: $(PROCESSED)/sample_labels_matching $(SCRIPT)/train_test_split.R
-	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Split samples into train and test..${RESET}" 
+	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Split samples into train and test..${RESET}"
 	@Rscript $(SCRIPT)/train_test_split.R
 
 $(PROCESSED)/train_data.tsv: $(RESULT)/selected_genes_sample_transposed.tsv $(PROCESSED)/train_sample_labels.tsv
@@ -85,13 +85,13 @@ $(MODEL)/model_evaluation_report.txt: $(SCRIPT)/evaluate_model.py $(MODEL)/tcgam
 	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
 	@touch $@
 
-$(RESULT)/attack_complete: $(SCRIPT)/attack_tcga.py 
+$(RESULT)/attack_complete: $(SCRIPT)/attack_tcga.py
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting one pixel attack..${RESET}"
 	@[ -d $(RESULT)/attack_results ] || mkdir -p $(RESULT)/attack_results
 	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
 	@touch $@
 
-$(RESULT)/attack_summary: $(RESULT)/attack_complete 
+$(RESULT)/attack_summary: $(RESULT)/attack_complete
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Summarizing attack results..${RESET}"
 	@awk -F"," '$$7=="True" {print $$4,$$2,$$5,$$6,$$9, $$10,$$11}' $(RESULT)/attack_results/attack_results* | tr -d "[]" | tr -s " " "\t"  | grep -v '"' | awk '{printf"%d %s %d %d %1.3f %1.3f %1.3f %1.3f %d %d %d %d %d\n", $$1, $$2, $$3, $$4, $$5, $$6, $$7, $$8, $$9, $$10, $$11, $$12, $$13}' | tr " " "\t" | sort -k6 -nr | uniq > $@
 
@@ -114,13 +114,19 @@ archive:
 	@echo "Running make will start new attack.."
 	@tar czvf archive/archive_"$$(date +'%Y%m%d')".tar.gz figures/* misc/* model/* results/attack_images/* results/attack_results/* results/attack_summary* results/candidate_genes results/tcga_gtex_genes_data.npz
 	@rm results/attack_complete results/attack_images/* results/attack_results/* results/attack_summary* results/candidate_genes
-  
+
+check:
+	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Check if necessary programs are available..${RESET}"
+	@gawk --version >/dev/null 2>&1 || (echo "ERROR: gawk is required (standard awk is not enough)."; exit 1)
+	@Rscript -e "library(tidyverse)" >/dev/null 2>&1 || (echo "ERROR: R with tidyverse required."; exit 1)
+	@docker --version >/dev/null 2>&1 || (echo -e "ERROR: docker is required for running Tensorflow scripts.\n       If you prefer not to use docker, please install Python packages listed under misc/requirements.txt along with tensorflow"; exit 1)
+
 clean_processed:
-	@echo "Cleaning processed data.." 
+	@echo "Cleaning processed data.."
 	@echo rm -r assets processed_data/*  variables/ saved_model.pb
 
-clean_results: 
+clean_results:
 	@echo rm
 
 clean_all:
-	@echo rm 
+	@echo rm
