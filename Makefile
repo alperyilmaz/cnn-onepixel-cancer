@@ -29,7 +29,7 @@ $(PROCESSED)/genes-deseq2: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normal
 $(PROCESSED)/genes_high_deg: $(RAW)/gene_attribute_matrix.txt.gz $(PROCESSED)/genes-deseq2 $(PROCESSED)/entrez2ensembl
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Find genes with many up/down cases..${RESET}"
 	@echo -e "                        ${BLUE}Then get Ensembl IDs of selected genes and pick the gene if it has deseq2 data..${RESET}"
-        @bash scripts/functions.sh
+	@bash scripts/functions.sh
 	@gunzip -c $< | _count_up_down_cases | _get_ensembl | _has_deseq | sort -k3 -nr | awk '{genes[$$2]++;if (length(genes) <= 1024){print $$0}}' > $@
 
 $(PROCESSED)/entrez2ensembl: $(RAW)/gene_attribute_matrix.txt.gz $(RAW)/biomart_gene_conv.tsv
@@ -47,13 +47,13 @@ $(PROCESSED)/sample_labels: $(RAW)/TcgaTargetGTEX_phenotype.txt.gz
 
 $(PROCESSED)/max_gene_exp_per_domain: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz $(PROCESSED)/genes_high_deg
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Calculating maximum gene expression..${RESET}"
-        @bash scripts/functions.sh
+	@bash scripts/functions.sh
 	@gunzip -c $<  | _filtergenes |  _pivotlonger | _filtersamples | _get_max_tcga_gtex > $@
 
 $(RESULT)/selected_genes_sample_transposed.tsv: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz $(PROCESSED)/sample_labels $(PROCESSED)/genes_high_deg
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Preparing the matrix of selected 1024 genes and selected tumor/normal samples..${RESET}"
 	@echo -e "                        ${BLUE}WARNING: This step requires around 6GB memory, so please close unnecessary programs..${RESET}"
-        @bash scripts/functions.sh
+	@bash scripts/functions.sh
 	@gunzip -c $< |  _filtergenes |  _pivotlonger | _filtersamples | awk '{printf"%s\t%s\t%.0f\n",$$1,$$2,$$3}' | _pivotwider > $@
 
 $(PROCESSED)/sample_labels_matching: $(RESULT)/selected_genes_sample_transposed.tsv $(PROCESSED)/sample_labels
@@ -104,7 +104,7 @@ $(RESULT)/attack_summary_annotated: $(SCRIPT)/extract_attack.py $(RESULT)/attack
 
 $(PROCESSED)/min_max_gene_exp_per_domain: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz 
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Calculating min and max expression per gene..${RESET}"
-        @bash scripts/functions.sh
+	@bash scripts/functions.sh
 	@gunzip -c $<  | _filtergenes |  _pivotlonger | _filtersamples | awk -f scripts/print_min_max.awk > $@
 
 $(RESULT)/candidate_genes: $(PROCESSED)/min_max_gene_exp_per_domain $(RESULT)/attack_summary_annotated
