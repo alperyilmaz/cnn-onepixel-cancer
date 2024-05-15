@@ -2,14 +2,25 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib
-from keras.datasets import cifar10
-from keras import backend as K
+#from keras.datasets import cifar10
+from tensorflow.keras.datasets import cifar10
+#from keras import backend as K
+from tensorflow.keras import backend
+
 import tensorflow as tf
-import keras
+#import keras
 from datetime import datetime
 from differential_evolution import differential_evolution
 import helper
 import random
+
+
+
+# for newer versions of tensorflow, use keras from tensorflow
+from tensorflow import keras
+
+# Monkey patch the helper script
+helper.keras = tf.keras
 
 # trying to prevent cuDNN errors. taken from
 # https://forums.developer.nvidia.com/t/could-not-create-cudnn-handle-cudnn-status-alloc-failed/108261/2

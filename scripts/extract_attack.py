@@ -3,9 +3,11 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from keras import backend as K
+#from keras import backend as K
 import tensorflow as tf
-import keras
+#import keras
+# for newer versions of tensorflow, use keras from tensorflow
+from tensorflow import keras
 
 # trying to prevent cuDNN errors. taken from
 # https://forums.developer.nvidia.com/t/could-not-create-cudnn-handle-cudnn-status-alloc-failed/108261/2
