@@ -70,19 +70,19 @@ def predict_classes(xs, img, target_class, model, minimize=True):
     # This function should always be minimized, so return its complement if needed
     return predictions if minimize else 1 - predictions
 
-def color_process(imgs):
-    if imgs.ndim < 4:
-        imgs = np.array([imgs])
-    imgs  = imgs.astype('float32')
-    std   = [np.std(x_test[:,:,:,i]) for i in range(3)]
-    mean  = [np.mean(x_test[:,:,:,i]) for i in range(3)]
-    for img in imgs:
-        for i in range(3):
-            img[:,:,i] = (img[:,:,i] - mean[i]) / std[i]
-    return imgs
+#def color_process(imgs):
+#    if imgs.ndim < 4:
+#        imgs = np.array([imgs])
+#    imgs  = imgs.astype('float32')
+#    std   = [np.std(x_test[:,:,:,i]) for i in range(3)]
+#    mean  = [np.mean(x_test[:,:,:,i]) for i in range(3)]
+#    for img in imgs:
+#        for i in range(3):
+#            img[:,:,i] = (img[:,:,i] - mean[i]) / std[i]
+#    return imgs
 
 def predict(img):
-    processed = color_process(img)
+    processed = np.array([img])
     return tcganet.predict(processed, batch_size=64)
 
 def predict_one(img):
@@ -154,7 +154,7 @@ def attack(img_id, model, target=None, pixel_count=1,
     # Show the best attempt at a solution (successful or not)
     #helper.plot_image(attack_image, actual_class, class_names, predicted_class)
 
-    return [model.name, pixel_count, img_id, actual_class, predicted_class, success, cdiff, prior_probs, predicted_probs, attack_result.x]
+    return [model.name, pixel_count, img_id, actual_class, predicted_class, success, cdiff, *prior_probs, *predicted_probs, *attack_result.x]
     
 
 
@@ -216,7 +216,7 @@ dt_string = now.strftime("%Y%m%d-%H%M%S")
 
 untargeted = attack_all(models, samples=800, targeted=False, pixels=[1])
 
-columns = ['model', 'pixels', 'image', 'true', 'predicted', 'success', 'cdiff', 'prior_probs', 'predicted_probs', 'perturbation']
+columns = ['model', 'pixels', 'image', 'true', 'predicted', 'success', 'cdiff', 'prior_probs_N','prior_probs_T', 'predicted_probs_N','predicted_probs_T', 'perturbation_x','perturbation_y','perturbation_r','perturbation_g','perturbation_b']
 
 results_table = pd.DataFrame(untargeted, columns=columns)
 
