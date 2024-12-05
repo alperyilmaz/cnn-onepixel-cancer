@@ -1,0 +1,9 @@
+keras
+pandas
+numpy
+matplotlib
+scipy
+six
+tqdm
+requests
+scikit-learn
