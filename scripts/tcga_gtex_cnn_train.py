@@ -80,19 +80,19 @@ model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 model.summary()
 
 # Open the file
-with open(MODELFOLDER + 'model_summary.txt','w') as fh:
+with open(MODELFOLDER + 'model_summary_' + dt_string + '.txt','w') as fh:
     # Pass the file handle in as a lambda function to make it callable
     model.summary(print_fn=lambda x: fh.write(x + '\n'))
 
 # Save the best model during each training checkpoint
-checkpoint = ModelCheckpoint('.',
+checkpoint = ModelCheckpoint('best_model.keras',
                             monitor='val_loss', 
                             verbose=0,
                             save_best_only= True,
                             mode='auto')
 
 history = model.fit(x_train, y_train,callbacks=checkpoint,
-                    epochs=80,
+                    epochs=100,
                     verbose=1,
                     validation_split=0.2)
                     #validation_data = (x_test, y_test))
@@ -106,7 +106,7 @@ plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'validation'], loc='upper left')
-plt.savefig(FIGURES + "accuracy.svg", dpi=300)
+plt.savefig(FIGURES + "accuracy_" + dt_string + ".svg", dpi=300)
 plt.close()
 
 # summarize history for loss
@@ -116,7 +116,7 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'validation'], loc='upper left')
-plt.savefig(FIGURES + "loss.svg", dpi=300)
+plt.savefig(FIGURES + "loss_" + dt_string + ".svg", dpi=300)
 plt.close()
 
 # x_test has 3577 samples, up to 1500 0, afterwards 1
@@ -140,7 +140,7 @@ plt.margins(5,5)
 plt.gca().xaxis.set_major_locator(plt.NullLocator())
 plt.gca().yaxis.set_major_locator(plt.NullLocator())
 #fig.suptitle('Normal Samples', fontsize=16)
-plt.savefig(FIGURES + "normal.png", bbox_inches = 'tight', pad_inches = 0, dpi=300)
+plt.savefig(FIGURES + "normal_" + dt_string + ".png", bbox_inches = 'tight', pad_inches = 0, dpi=300)
 
 fig, axes = plt.subplots(1, 4, figsize=(16, 12))
 
@@ -156,5 +156,5 @@ plt.margins(5,5)
 plt.gca().xaxis.set_major_locator(plt.NullLocator())
 plt.gca().yaxis.set_major_locator(plt.NullLocator())
 #fig.suptitle('Normal Samples', fontsize=16)
-plt.savefig(FIGURES + "tumor.png", bbox_inches = 'tight', pad_inches = 0, dpi=300)
+plt.savefig(FIGURES + "tumor_" + dt_string + ".png", bbox_inches = 'tight', pad_inches = 0, dpi=300)
 plt.close()
