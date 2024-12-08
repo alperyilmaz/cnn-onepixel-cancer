@@ -13,11 +13,18 @@ Added by Andrew Nelson 2014
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize.optimize import _status_message
+#from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state
 from six import string_types
 import warnings
 
+# Add status message dictionary to replace the imported one
+_status_message = {
+    'success': 'Optimization terminated successfully.',
+    'maxfev': 'Maximum number of function evaluations has been reached.',
+    'maxiter': 'Maximum number of iterations has been reached.',
+    'warning': 'Optimization terminated with warning.'
+}
 
 __all__ = ['differential_evolution']
 
