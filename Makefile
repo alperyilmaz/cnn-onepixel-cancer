@@ -1,12 +1,26 @@
 SHELL := bash
 .ONESHELL:
 
+# GPU mode can be set via command line: make GPU=1
+# Default to CPU mode if not specified
+GPU ?= 0
+
 # folder assignments
 RAW=raw-data
 PROCESSED=processed-data
 RESULT=results
 SCRIPT=scripts
 MODEL=model
+
+# Docker configuration based on GPU mode
+ifeq ($(GPU),1)
+    DOCKER_GPU_FLAGS := --gpus all
+    DOCKER_IMAGE := alperyilmaz/one-pixel-attack:gpu
+else
+    DOCKER_GPU_FLAGS :=
+    DOCKER_IMAGE := alperyilmaz/one-pixel-attack:cpu
+endif
+
 # coloring the output, taken from https://gist.github.com/rsperl/d2dfe88a520968fbc1f49db0a29345b9
 ifneq (,$(findstring xterm,${TERM}))
 	GREEN        := $(shell tput bold)$(shell tput -Txterm setaf 2)
@@ -87,17 +101,20 @@ $(RESULT)/tcga_gtex_genes_data.npz: $(SCRIPT)/sample_convert.py $(PROCESSED)/tra
 $(MODEL)/tcgamodel.h5: $(SCRIPT)/tcga_gtex_cnn_train.py $(RESULT)/tcga_gtex_genes_data.npz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting the training process..${RESET}"
 	@mkdir -p figures model
-	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
+	@docker run $(DOCKER_GPU_FLAGS) -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf $(DOCKER_IMAGE) python $<
+	#@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
 
 $(MODEL)/model_evaluation_report.txt: $(SCRIPT)/evaluate_model.py $(MODEL)/tcgamodel.h5 $(RESULT)/tcga_gtex_genes_data.npz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Preparing ROC curve and model evaluation report..${RESET}"
-	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
+	@docker run $(DOCKER_GPU_FLAGS) -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf $(DOCKER_IMAGE) python $<
+	#@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
 	@touch $@
 
 $(RESULT)/attack_complete: $(SCRIPT)/attack_tcga_all.py
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting one pixel attack..${RESET}"
 	@[ -d $(RESULT)/attack_results ] || mkdir -p $(RESULT)/attack_results
-	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
+	@docker run $(DOCKER_GPU_FLAGS) -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf $(DOCKER_IMAGE) python $<
+	#@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
 	@touch $@
 
 $(RESULT)/attack_summary: $(RESULT)/attack_complete
@@ -108,7 +125,8 @@ $(RESULT)/attack_summary: $(RESULT)/attack_complete
 $(RESULT)/attack_summary_annotated: $(SCRIPT)/extract_attack.py $(RESULT)/attack_summary $(MODEL)/tcgamodel.h5 $(RESULT)/tcga_gtex_genes_data.npz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Annotating attack results..${RESET}"
 	@mkdir -p results/attack_images/
-	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
+	@docker run $(DOCKER_GPU_FLAGS) -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf $(DOCKER_IMAGE) python $<
+	#@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
 
 $(PROCESSED)/min_max_gene_exp_per_domain: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz 
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Calculating min and max expression per gene..${RESET}"
