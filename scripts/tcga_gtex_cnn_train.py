@@ -1,21 +1,19 @@
-# Python Libraries
 import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from keras.datasets import cifar10
-from keras import backend as K
 import tensorflow as tf
-import keras
+from tensorflow import keras
+from tensorflow.keras import backend
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.layers import Conv2D, Dense, Flatten, MaxPooling2D, Dropout, Activation, GlobalAveragePooling2D
+from tensorflow.keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras.optimizers import Adam  # Use modern optimizer import
 from PIL import Image
 from datetime import datetime
-from keras import optimizers
-from keras.datasets import cifar10
-from keras.models import Sequential, load_model
-from keras.layers import Conv2D, Dense, Flatten, MaxPooling2D, Dropout, Activation, GlobalAveragePooling2D
-from keras.callbacks import LearningRateScheduler, TensorBoard, ModelCheckpoint
-from keras.preprocessing.image import ImageDataGenerator
-from keras.regularizers import l2
 
 # trying to prevent cuDNN errors. taken from
 # https://forums.developer.nvidia.com/t/could-not-create-cudnn-handle-cudnn-status-alloc-failed/108261/2
@@ -77,7 +75,7 @@ model.add(Conv2D(2, (1, 1), padding='valid'))
 model.add(GlobalAveragePooling2D())
 
 model.add(Activation('sigmoid'))
-opt = optimizers.Adamax(lr=.0001)
+opt = tf.keras.optimizers.Adamax(learning_rate=0.0001)
 model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 model.summary()
 
@@ -94,9 +92,10 @@ checkpoint = ModelCheckpoint('.',
                             mode='auto')
 
 history = model.fit(x_train, y_train,callbacks=checkpoint,
-                    epochs=40,
+                    epochs=80,
                     verbose=1,
-                    validation_data = (x_test, y_test))
+                    validation_split=0.2)
+                    #validation_data = (x_test, y_test))
 
 model.save(MODELFOLDER + "tcgamodel.h5", save_format='h5')
 
@@ -106,7 +105,7 @@ plt.plot(history.history['val_accuracy'])
 plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'validation'], loc='upper left')
 plt.savefig(FIGURES + "accuracy.svg", dpi=300)
 plt.close()
 
@@ -116,7 +115,7 @@ plt.plot(history.history['val_loss'])
 plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'validation'], loc='upper left')
 plt.savefig(FIGURES + "loss.svg", dpi=300)
 plt.close()
 

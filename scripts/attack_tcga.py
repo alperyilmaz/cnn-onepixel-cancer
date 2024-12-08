@@ -141,7 +141,7 @@ def attack(img_id, model, target=None, pixel_count=1,
     attack_result = differential_evolution(
         predict_fn, bounds, maxiter=maxiter, popsize=popmul,
         recombination=1, atol=-1, callback=callback_fn, polish=False)
-
+    attack_result_int = attack_result.x.astype(int)
     # Calculate some useful statistics to return from this function
     attack_image = perturb_image(attack_result.x, x_test[img_id])[0]
     prior_probs = predict_one(x_test[img_id])
@@ -154,7 +154,7 @@ def attack(img_id, model, target=None, pixel_count=1,
     # Show the best attempt at a solution (successful or not)
     #helper.plot_image(attack_image, actual_class, class_names, predicted_class)
 
-    return [model.name, pixel_count, img_id, actual_class, predicted_class, success, cdiff, *prior_probs, *predicted_probs, *attack_result.x]
+    return [model.name, pixel_count, img_id, actual_class, predicted_class, success, cdiff, *prior_probs, *predicted_probs, *attack_result_int]
     
 
 
@@ -214,7 +214,7 @@ print("[Starting the attack..]")
 now = datetime.now()
 dt_string = now.strftime("%Y%m%d-%H%M%S")
 
-untargeted = attack_all(models, samples=800, targeted=False, pixels=[1])
+untargeted = attack_all(models, samples=10, targeted=False, pixels=[1])
 
 columns = ['model', 'pixels', 'image', 'true', 'predicted', 'success', 'cdiff', 'prior_probs_N','prior_probs_T', 'predicted_probs_N','predicted_probs_T', 'perturbation_x','perturbation_y','perturbation_r','perturbation_g','perturbation_b']
 

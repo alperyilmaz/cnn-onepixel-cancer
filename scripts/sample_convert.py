@@ -40,9 +40,9 @@ test_data=pd.read_csv(PROCESSED + "test_data.tsv",sep="\t")
 control_data = pd.read_csv(PROCESSED + "control_sample",sep="\t")
 print("                        start converting rgb")
 
-train_img = dec_arr2rgb_arr(train_data.drop(['Sample'],1))
-test_img = dec_arr2rgb_arr(test_data.drop(['Sample'],1))
-control_img=dec_arr2rgb_arr(control_data.drop(['Sample'],1))
+train_img = dec_arr2rgb_arr(train_data.drop(columns=['Sample']))
+test_img = dec_arr2rgb_arr(test_data.drop(columns=['Sample']))
+control_img=dec_arr2rgb_arr(control_data.drop(columns=['Sample']))
 print("                        converting rgb complete")
 
 

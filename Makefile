@@ -1,4 +1,6 @@
-SHELL=bash
+SHELL := bash
+.ONESHELL:
+
 # folder assignments
 RAW=raw-data
 PROCESSED=processed-data
@@ -29,7 +31,7 @@ $(PROCESSED)/genes-deseq2: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normal
 $(PROCESSED)/genes_high_deg: $(RAW)/gene_attribute_matrix.txt.gz $(PROCESSED)/genes-deseq2 $(PROCESSED)/entrez2ensembl
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Find genes with many up/down cases..${RESET}"
 	@echo -e "                        ${BLUE}Then get Ensembl IDs of selected genes and pick the gene if it has deseq2 data..${RESET}"
-	@bash scripts/functions.sh
+	source scripts/functions.sh
 	@gunzip -c $< | _count_up_down_cases | _get_ensembl | _has_deseq | sort -k3 -nr | awk '{genes[$$2]++;if (length(genes) <= 1024){print $$0}}' > $@
 
 $(PROCESSED)/entrez2ensembl: $(RAW)/gene_attribute_matrix.txt.gz $(RAW)/biomart_gene_conv.tsv
@@ -39,6 +41,7 @@ $(PROCESSED)/entrez2ensembl: $(RAW)/gene_attribute_matrix.txt.gz $(RAW)/biomart_
 
 $(PROCESSED)/sample_labels: $(RAW)/TcgaTargetGTEX_phenotype.txt.gz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Get sample labels for selected samples..${RESET}"
+	@mkdir -p processed-data
 	@gunzip -c $< | awk -F"\t" '$$5=="Metastatic" && $$7=="TCGA" {printf"%s\tTumor\n",$$1}' > $@
 	@gunzip -c $< | awk -F"\t" '$$5=="Normal Tissue" && $$7=="GTEX" {printf"%s\tNormal\n",$$1}' >> $@
 	@gunzip -c $< | awk -F"\t" '$$5=="Primary Blood Derived Cancer - Peripheral Blood" && $$7=="TCGA" {printf"%s\tTumor\n",$$1}' >> $@
@@ -47,13 +50,14 @@ $(PROCESSED)/sample_labels: $(RAW)/TcgaTargetGTEX_phenotype.txt.gz
 
 $(PROCESSED)/max_gene_exp_per_domain: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz $(PROCESSED)/genes_high_deg
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Calculating maximum gene expression..${RESET}"
-	@bash scripts/functions.sh
+	source scripts/functions.sh
 	@gunzip -c $<  | _filtergenes |  _pivotlonger | _filtersamples | _get_max_tcga_gtex > $@
 
 $(RESULT)/selected_genes_sample_transposed.tsv: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz $(PROCESSED)/sample_labels $(PROCESSED)/genes_high_deg
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Preparing the matrix of selected 1024 genes and selected tumor/normal samples..${RESET}"
 	@echo -e "                        ${BLUE}WARNING: This step requires around 6GB memory, so please close unnecessary programs..${RESET}"
-	@bash scripts/functions.sh
+	source scripts/functions.sh
+	@mkdir -p results
 	@gunzip -c $< |  _filtergenes |  _pivotlonger | _filtersamples | awk '{printf"%s\t%s\t%.0f\n",$$1,$$2,$$3}' | _pivotwider > $@
 
 $(PROCESSED)/sample_labels_matching: $(RESULT)/selected_genes_sample_transposed.tsv $(PROCESSED)/sample_labels
@@ -77,21 +81,23 @@ $(PROCESSED)/control_test.tsv: $(SCRIPT)/generate_control_data.R $(RESULT)/selec
 
 $(RESULT)/tcga_gtex_genes_data.npz: $(SCRIPT)/sample_convert.py $(PROCESSED)/train_data.tsv $(PROCESSED)/control_test.tsv
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Preparing npz file..${RESET}"
+	@mkdir -p results
 	@python $<
 
 $(MODEL)/tcgamodel.h5: $(SCRIPT)/tcga_gtex_cnn_train.py $(RESULT)/tcga_gtex_genes_data.npz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting the training process..${RESET}"
-	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
+	@mkdir -p figures model
+	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
 
 $(MODEL)/model_evaluation_report.txt: $(SCRIPT)/evaluate_model.py $(MODEL)/tcgamodel.h5 $(RESULT)/tcga_gtex_genes_data.npz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Preparing ROC curve and model evaluation report..${RESET}"
-	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
+	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
 	@touch $@
 
-$(RESULT)/attack_complete: $(SCRIPT)/attack_tcga.py
+$(RESULT)/attack_complete: $(SCRIPT)/attack_tcga_all.py
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Starting one pixel attack..${RESET}"
 	@[ -d $(RESULT)/attack_results ] || mkdir -p $(RESULT)/attack_results
-	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
+	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
 	@touch $@
 
 $(RESULT)/attack_summary: $(RESULT)/attack_complete
@@ -100,11 +106,12 @@ $(RESULT)/attack_summary: $(RESULT)/attack_complete
 
 $(RESULT)/attack_summary_annotated: $(SCRIPT)/extract_attack.py $(RESULT)/attack_summary $(MODEL)/tcgamodel.h5 $(RESULT)/tcga_gtex_genes_data.npz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Annotating attack results..${RESET}"
-	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf alperyilmaz/one-pixel-attack:gpu python $<
+	@mkdir -p results/attack_images/
+	@docker run --gpus all -it --rm -u $$(id -u):$$(id -g) -v $$(pwd):/tf -w /tf alperyilmaz/one-pixel-attack:gpu python $<
 
 $(PROCESSED)/min_max_gene_exp_per_domain: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz 
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Calculating min and max expression per gene..${RESET}"
-	@bash scripts/functions.sh
+	source scripts/functions.sh
 	@gunzip -c $<  | _filtergenes |  _pivotlonger | _filtersamples | awk -f scripts/print_min_max.awk > $@
 
 $(RESULT)/candidate_genes: $(PROCESSED)/min_max_gene_exp_per_domain $(RESULT)/attack_summary_annotated
