@@ -47,19 +47,19 @@ def predict_classes(xs, img, target_class, model, minimize=True):
     # This function should always be minimized, so return its complement if needed
     return predictions if minimize else 1 - predictions
 
-def color_process(imgs):
-    if imgs.ndim < 4:
-        imgs = np.array([imgs])
-    imgs  = imgs.astype('float32')
-    std   = [np.std(x_test[:,:,:,i]) for i in range(3)]
-    mean  = [np.mean(x_test[:,:,:,i]) for i in range(3)]
-    for img in imgs:
-        for i in range(3):
-            img[:,:,i] = (img[:,:,i] - mean[i]) / std[i]
-    return imgs
+#def color_process(imgs):
+#    if imgs.ndim < 4:
+#        imgs = np.array([imgs])
+#    imgs  = imgs.astype('float32')
+#    std   = [np.std(x_test[:,:,:,i]) for i in range(3)]
+#    mean  = [np.mean(x_test[:,:,:,i]) for i in range(3)]
+#    for img in imgs:
+#        for i in range(3):
+#            img[:,:,i] = (img[:,:,i] - mean[i]) / std[i]
+#    return imgs
 
 def predict(img):
-    processed = color_process(img)
+    processed = np.array([img])
     return tcganet.predict(processed, batch_size=64)
 
 def predict_one(img):
@@ -156,12 +156,12 @@ def extract_attack(image_id, x, y, r, g, b):
     prior_confidence = predict_one(x_test[image_id])[true_class]
     predicted_probs = predict_one(image_perturbed)
     predicted_class = np.argmax(predicted_probs)
-    attacked_xy = np.floor(pixel[0:2]).astype(int)
+    attacked_xy = pixel[0:2]
     attacked_gene = gene_names[ attacked_xy[0]*32 + attacked_xy[1] ]
     attacked_sample = test_sample_names[image_id]
-    attacked_expression = r*65536 + g*256 + b
+    attacked_expression = int(r)*65536 + int(g)*256 + int(b)
     orig_r, orig_g, orig_b = x_test[image_id][x][y]
-    original_expression = orig_r*65536 + orig_g*256 + orig_b
+    original_expression = int(orig_r)*65536 + int(orig_g)*256 + int(orig_b)
     return(attacked_sample, attacked_gene,  
            original_expression, attacked_expression, 
            true_class, predicted_class,

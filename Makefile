@@ -120,7 +120,7 @@ $(RESULT)/attack_complete: $(SCRIPT)/attack_tcga_all.py
 $(RESULT)/attack_summary: $(RESULT)/attack_complete
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Summarizing attack results..${RESET}"
 	@echo -e "${GREEN}[ $$(date +'%Y-%m-%d %H:%M:%S') ] WARNING: All prior attack results are combined into one file! ${RESET}"
-	@awk -F"," -v OFS="\t" '$$7=="True" {print $$4,$$2,$$5,$$6,$$9,$$10,$$11,$$12,$$13,$$14,$$15,$$16,$$17}' $(RESULT)/attack_results/attack_results* | sort -k6 -nr | uniq > $@
+	@awk -F"," -v OFS="\t" '$$7=="True" {print $$4,$$2,$$5,$$6,$$9,$$10,$$11,$$12,$$13,$$14,$$15,$$16,$$17}' $(RESULT)/attack_results/attack_results* | sort -n -k1,1 | uniq > $@
 
 $(RESULT)/attack_summary_annotated: $(SCRIPT)/extract_attack.py $(RESULT)/attack_summary $(MODEL)/tcgamodel.h5 $(RESULT)/tcga_gtex_genes_data.npz
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Annotating attack results..${RESET}"
