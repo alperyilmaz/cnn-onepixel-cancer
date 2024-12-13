@@ -4,6 +4,8 @@ SHELL := bash
 # GPU mode can be set via command line: make GPU=1
 # Default to CPU mode if not specified
 GPU ?= 0
+# default shuffle mode is off
+SHUFFLE ?= 0
 
 # folder assignments
 RAW=raw-data
@@ -70,9 +72,16 @@ $(PROCESSED)/max_gene_exp_per_domain: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.de
 $(RESULT)/selected_genes_sample_transposed.tsv: $(RAW)/TCGA-GTEx-TARGET-gene-exp-counts.deseq2-normalized.log2.gz $(PROCESSED)/sample_labels $(PROCESSED)/genes_high_deg
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Preparing the matrix of selected 1024 genes and selected tumor/normal samples..${RESET}"
 	@echo -e "                        ${BLUE}WARNING: This step requires around 6GB memory, so please close unnecessary programs..${RESET}"
+ifeq ($(SHUFFLE),1)
+	@echo -e "${BLUE}                        WARNING2: Shuffling the genes..${RESET}"
+endif
 	source scripts/functions.sh
 	@mkdir -p results
+ifeq ($(SHUFFLE),1)
+	@gunzip -c $< |  _filtergenes |  _pivotlonger | _filtersamples | awk '{printf"%s\t%s\t%.0f\n",$$1,$$2,$$3}' | _pivotwider | python $(SCRIPT)/shuffle_genes.py > $@
+else
 	@gunzip -c $< |  _filtergenes |  _pivotlonger | _filtersamples | awk '{printf"%s\t%s\t%.0f\n",$$1,$$2,$$3}' | _pivotwider > $@
+endif
 
 $(PROCESSED)/sample_labels_matching: $(RESULT)/selected_genes_sample_transposed.tsv $(PROCESSED)/sample_labels
 	@echo -e "${BLUE}[ $$(date +'%Y-%m-%d %H:%M:%S') ] Remove samples that mismatch between DeSeq and Phenotype datasets..${RESET}"

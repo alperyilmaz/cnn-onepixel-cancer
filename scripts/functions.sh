@@ -8,9 +8,13 @@ function _filtersamples() { awk 'FNR==NR {samples[$1]++; next} ($2 in samples)' 
 
 export -f _filtersamples
 
-function _pivotlonger() { awk 'NR==1{split($0,header,"\t"); next} {for (j=2;j<NF;j++){printf"%s\t%s\t%s\n",$1,header[j],2^$j}}'; }
+function _pivotlonger() { awk 'NR==1{split($0,header,"\t"); next} {for (j=2;j<=NF;j++){printf"%s\t%s\t%s\n",$1,header[j],2^$j}}'; }
 
 export -f _pivotlonger
+
+function _pivotlonger_nolog() { awk 'NR==1{split($0,header,"\t"); next} {for (j=2;j<=NF;j++){printf"%s\t%s\t%s\n",$1,header[j],$j}}'; }
+
+export -f _pivotlonger_nolog
 
 function _pivotwider() { awk '{thedata[$2][$1]=$3}END{asorti(thedata,sindex); asorti(thedata[sindex[1]],gindex); printf"Sample\t"; for (g in gindex){printf"%s\t",gindex[g]};print"";for (s in sindex){ printf"%s\t",sindex[s]; for (g in gindex){printf"%s\t",thedata[sindex[s]][gindex[g]]};print ""; }}' | sed -e 's/\t$//'; }
 
